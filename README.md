@@ -17,5 +17,5 @@ Python的番号、封面、预览图下载部分（已完成，待优化）<br>
 =====注意事项==============================<br>
 该工具目前爬取的是avmoo的官网，可能要爬梯子<br>
 当然国内有许多山寨的网站，只要你看到这种配色<br>
-![image](img/download.png)<br>
+![image](https://github.com/WolfChen1996/TagJointSearchEngine/blob/master/img/logo.png)<br>
 的LOGO，那这个工具都是可以用的<br>
