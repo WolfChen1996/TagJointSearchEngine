@@ -42,15 +42,16 @@ urllist = reg_url.findall(html[0])
 reg2 = r'>.*<'
 reg_tag = re.compile(reg2)
 taglist = reg_tag.findall(html[0])
-
+print("Go!")
 id=0
-while len(urllist)>0:
-    url=urllist.pop()
-    tag=taglist.pop()
+while id<len(urllist):
+    url=urllist[id]
+    tag=taglist[id]
     name=tag.replace('<','')
     name=name.replace('>','')
-    #dirnow=os.getcwd()
-    #dirnew=dirnow+'\\avmoo\\'+str(id)+name
-    #os.mkdir(dirnew)
+    dirnow=os.getcwd()
+    dirnew=dirnow+'\\avmoo\\'+str(id)+name
+    os.mkdir(dirnew)
     print(str(id)+name,url[0])
     id=id+1
+print("Done")
