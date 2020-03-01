@@ -1,218 +1,164 @@
 from bs4 import BeautifulSoup
+from retrying import retry
 import urllib
 import urllib.request
 import requests
 import random
 import ssl
-import re
 import os
-print("Resdy?")
+import time
 
+#网址
+urlo = "http://avmask.com/cn/released"
+#起始页130
+pageid=130
+
+#################################################
 my_headers=[
-"Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
-"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36",
-"Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0",
-"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/537.75.14",  
-"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)"
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
 ]
+dirnow=os.getcwd()
 
+def trygethtml(req,context):
+    attempts = 0
+    success = False
+    while attempts < 10 and not success:
+        try:
+            response = urllib.request.urlopen(req,context=context,timeout=30)
+            success = True
+        except:
+            print(response)
+            attempts += 1
+            if attempts == 10:
+                break
+    return response
 
-#标签名字
-tagname="130空中小姐"
-#标签网址
-urlo = "https://avmask.com/cn/genre/b8b2bd826e38bb9a"
-pageid=6
-while pageid<=200:
-    pageid=pageid+1
+def trygetimg(url):
+    attempts = 0
+    success = False
+    while attempts < 10 and not success:
+        try:
+            r = requests.get(url,stream=True,timeout=20)
+            success = True
+        except:
+            print("E")
+            attempts += 1
+            if attempts == 10:
+                break
+    return r
+
+while pageid>0:
     print("-" * 50)
     print("第"+str(pageid)+"页")
+    print("-" * 50)
     url=urlo+"/page/"+str(pageid)
+    #爬虫防屏蔽脑袋
     randdom_header=random.choice(my_headers) 
-
     req = urllib.request.Request(url)
     req.add_header("User-Agent",randdom_header)
     req.add_header("GET",url)
     context = ssl._create_unverified_context()
-    response = urllib.request.urlopen(req,context=context)
 
+    response=trygethtml(req,context)
+
+    #开始表演
     html = response.read().decode('utf-8')
-    #print("Get Html")
-    #print(html)
+    print("Get Html")
+    
     if not("404 Not Found" in html):
-        html=re.findall(r'waterfall.*class="hidden-xs',html,re.S)
-        #print("Get Body")
-        #print(html[0])
 
-        soup = BeautifulSoup(html[0],'html.parser')
+        soup = BeautifulSoup(html,'html.parser')
+        body=soup.find(name='div',attrs={"id":"waterfall"})
+        #print(body)
+        itemlist=soup.findAll(name='div',attrs={"class":"item"})
 
-        #链接
-        a_href=soup.findAll("a")
+        for i in range(0,len(itemlist)):
+            print(pageid)
+            #获取基础信息
+            #print(itemlist[i])
+            atag=itemlist[i].find(name='a',attrs={"class":"movie-box"})
+            date=itemlist[i].findAll(name='date')
+            img=atag.find(name='img')
 
-        #图片
-        img_src=soup.findAll("img")
+            #基础信息
+            href=atag['href']
+            avname=img['title']
+            avid=date[0].string
+            avdate=date[1].string
+            print("/" * 50)
 
-        #番号
-        reg3 = r'date>.*> / <'
-        reg_id = re.compile(reg3)
-        idlist = reg_id.findall(html[0])
-
-        #保存
-        dirnow=os.getcwd()
-        while len(idlist)>0:
-            id=idlist.pop()
-            id=id.replace('date>','')
-            id=id.replace('</ / <','')
-            href=a_href.pop()
-            img=img_src.pop()
-            fhref=href.get('href')
-            fimg=img.get('src')
-            #print("番号: "+id+" 链接:"+fhref+" 封面:"+fimg)
-            print(id)
+            fileaddress=dirnow+'\\all\\'+avid+'_'+avdate+'.txt'
+            imgaddress=dirnow+'\\img\\'+avid+'_'+avdate+'.jpg'
             
-            fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'.txt'
-            imgaddress=dirnow+'\\avmoo\\img\\'+id+'.jpg'
             if os.path.isfile(fileaddress):
                 f = open(fileaddress, "r")
                 str1 = f.readline()
                 f.close()
-                if(str1==fhref):
-                    print("已存在")
-                else:#请忽略这种沙雕写法
-                    fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'a.txt'
-                    imgaddress=dirnow+'\\avmoo\\img\\'+id+'a.jpg'
-                    dirnew=dirnow+'\\avmoo\\img\\'+id+"a"
-                    if os.path.isfile(fileaddress):
-                        fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'a.txt'
-                        imgaddress=dirnow+'\\avmoo\\img\\'+id+'a.jpg'
-                        dirnew=dirnow+'\\avmoo\\img\\'+id+"a"
-                        if os.path.isfile(fileaddress):
-                            fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'a.txt'
-                            imgaddress=dirnow+'\\avmoo\\img\\'+id+'a.jpg'
-                            dirnew=dirnow+'\\avmoo\\img\\'+id+"a"
-                            if os.path.isfile(fileaddress):
-                                fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'a.txt'
-                                imgaddress=dirnow+'\\avmoo\\img\\'+id+'a.jpg'
-                                dirnew=dirnow+'\\avmoo\\img\\'+id+"a"
-                                if os.path.isfile(fileaddress):
-                                    fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'a.txt'
-                                    imgaddress=dirnow+'\\avmoo\\img\\'+id+'a.jpg'
-                                    dirnew=dirnow+'\\avmoo\\img\\'+id+"a"
-                                    if os.path.isfile(fileaddress):
-                                        fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'a.txt'
-                                        imgaddress=dirnow+'\\avmoo\\img\\'+id+'a.jpg'
-                                        dirnew=dirnow+'\\avmoo\\img\\'+id+"a"
-                                        if os.path.isfile(fileaddress):
-                                            fileaddress=dirnow+'\\avmoo\\'+tagname+'\\'+id+'a.txt'
-                                            imgaddress=dirnow+'\\avmoo\\img\\'+id+'a.jpg'
-                                            dirnew=dirnow+'\\avmoo\\img\\'+id+"a"
-
-                    
-                    f=open(fileaddress, "w+")
-                    f.write(fhref)
-                    f.close()
-
-                    reqnew = urllib.request.Request(fhref)
-                    reqnew.add_header("User-Agent",randdom_header)
-                    reqnew.add_header("GET",fhref)
-
-                    responsenew = urllib.request.urlopen(reqnew,context=context)
-                    htmlnew = responsenew.read().decode('utf-8')
-                    #print("Get Html")
-                    #print(html)
-
-                    htmlnew=re.findall(r'bigImage.*title',htmlnew,re.S)
-                    #print("Get Body")
-                    #print(html[0])
-
-                    reqnew = urllib.request.Request(fhref)
-                    reqnew.add_header("User-Agent",randdom_header)
-                    reqnew.add_header("GET",fhref)
-
-                    responsenew = urllib.request.urlopen(reqnew,context=context)
-                    htmlnew = responsenew.read().decode('utf-8')
-                    #print("Get Html")
-                    #print(htmlnew)
-
-                    bs = BeautifulSoup(htmlnew,"html.parser")
-
-                    bsf=bs.find_all(name='a',attrs={"class":"bigImage"})
-                    #大图url
-                    #print(bsf[0]['href'])
-                    r = requests.get(bsf[0]['href'], stream=True)
-                    #print(r.status_code)
-                    if r.status_code == 200:
-                        open(imgaddress, 'wb').write(r.content)
-                        print("大图下载完成")
-                    del r
-                    os.mkdir(dirnew)
-                    imgid=1
-                    for a in bs.find_all(name='a',attrs={"class":"sample-box"}):
-                        #print(a["href"])
-                        r = requests.get(a["href"], stream=True)
-                        #print(r.status_code)
-                        if r.status_code == 200:
-                            dirf=dirnew+"\\"+str(imgid)+".jpg"
-                            open(dirf, 'wb').write(r.content)
-                            #print("预览图"+str(imgid)+"下载完成")
-                        del r
-                        imgid=imgid+1
-                    print("已添加")
-                    
+                print(avid+"已存在")
             else:
+                #先写先得
                 f=open(fileaddress, "w+")
-                f.write(fhref)
+                f.write(href)
+                #f.write('\r\n')
+                #f.write(avname)
                 f.close()
-
-
-                reqnew = urllib.request.Request(fhref)
+                
+                print(avid)
+                
+                reqnew = urllib.request.Request(href)
                 reqnew.add_header("User-Agent",randdom_header)
-                reqnew.add_header("GET",fhref)
-
-                responsenew = urllib.request.urlopen(reqnew,context=context)
+                reqnew.add_header("GET",href)
+                responsenew=trygethtml(reqnew,context)
                 htmlnew = responsenew.read().decode('utf-8')
-                #print("Get Html")
-                #print(html)
 
-                htmlnew=re.findall(r'bigImage.*title',htmlnew,re.S)
-                #print("Get Body")
-                #print(html[0])
 
-                reqnew = urllib.request.Request(fhref)
-                reqnew.add_header("User-Agent",randdom_header)
-                reqnew.add_header("GET",fhref)
-
-                responsenew = urllib.request.urlopen(reqnew,context=context)
-                htmlnew = responsenew.read().decode('utf-8')
-                #print("Get Html")
-                #print(htmlnew)
 
                 bs = BeautifulSoup(htmlnew,"html.parser")
+                
 
                 bsf=bs.find_all(name='a',attrs={"class":"bigImage"})
-                #大图url
-                #print(bsf[0]['href'])
-                r = requests.get(bsf[0]['href'], stream=True)
-                #print(r.status_code)
+
+                r=trygetimg(bsf[0]['href'])
                 if r.status_code == 200:
                     open(imgaddress, 'wb').write(r.content)
                     print("大图下载完成")
                 del r
 
-                dirnow=os.getcwd()
-                dirnew=dirnow+'\\avmoo\\img\\'+id
-                os.mkdir(dirnew)
+                '''
+                #预览图部分
+                dirnew=dirnow+'\\img\\'+avid+'_'+avdate
+                if not os.path.isdir(dirnew):
+                    os.mkdir(dirnew)
+                localtime = time.asctime( time.localtime(time.time()) )
+                print(localtime,"开始下载预览图")
                 imgid=1
                 for a in bs.find_all(name='a',attrs={"class":"sample-box"}):
-                    #print(a["href"])
-                    r = requests.get(a["href"], stream=True)
-                    #print(r.status_code)
+                    r=trygetimg(a["href"])
                     if r.status_code == 200:
                         dirf=dirnew+"\\"+str(imgid)+".jpg"
                         open(dirf, 'wb').write(r.content)
+                        print(imgid)
                         #print("预览图"+str(imgid)+"下载完成")
                     del r
                     imgid=imgid+1
-                print("已添加")
+                '''
 
+                taglist=bs.findAll(name='span',attrs={"class":"genre"})
+                for a in range(0,len(taglist)):
+                    taghref=taglist[a].find(name='a')['href']
+                    tagdir=taglist[a].string+taghref[-3]+taghref[-2]+taghref[-1]
+                    if os.path.isdir(dirnow+'\\avmoo\\'+tagdir):
+                        f=open(dirnow+'\\avmoo\\'+tagdir+"\\"+avid+'_'+avdate+'.txt', "w+")
+                        f.write(href)
+                        f.close()
+                        
+                #print("已添加")
+		#详情页下载结束
+            
+        else:
+            print("N")
+            qp = os.system('cls')
+    
     else:
-        pageid=201
+        pageid=-2
+    pageid=pageid+1
