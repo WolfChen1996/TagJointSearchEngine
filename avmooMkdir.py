@@ -30,7 +30,7 @@ print("Get Html")
 #print(html)
 
 
-html=re.findall(r'主题.*其他',html,re.S)
+html=re.findall(r'主题.*ptb-20',html,re.S)
 #print(html)
 
 reg1 = r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*,]|(?:%[0-9a-fA-F][0-9a-fA-F]))+)|([a-zA-Z]+.\w+\.+[a-zA-Z0-9\/_]+)'
@@ -39,7 +39,7 @@ urllist = reg_url.findall(html[0])
 #for url in urllist:
 #    print(url[0])
 
-reg2 = r'>.*<'
+reg2 = r'>.*</a>'
 reg_tag = re.compile(reg2)
 taglist = reg_tag.findall(html[0])
 print("Go!")
@@ -47,11 +47,13 @@ id=0
 while id<len(urllist):
     url=urllist[id]
     tag=taglist[id]
-    name=tag.replace('<','')
+    name=tag.replace('</a>','')
     name=name.replace('>','')
     dirnow=os.getcwd()
-    dirnew=dirnow+'\\avmoo\\'+str(id)+name
+    #dirnew=dirnow+'\\avmoo\\'+str(id)+name
+    dirnew=dirnow+'\\avmoo\\'+name+url[0][-3]+url[0][-2]+url[0][-1]
     os.mkdir(dirnew)
-    print(str(id)+name,url[0])
+    print(dirnew)
+    #print(str(id)+name,url[0])
     id=id+1
 print("Done")
